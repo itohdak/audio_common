@@ -1,6 +1,7 @@
  <launch>
   <arg name="device" default="" />
-  <arg name="sleep_time" default="1" />
+  <arg name="sleep_time" default="0.7" />
+  <arg name="la" default="jp" />
 
   <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"
         output="screen" respawn="true" >
@@ -15,5 +16,6 @@
   <node name="eus_client" pkg="sound_play" type="soundplay-client.l"
         output="screen" >
     <param name="sleep_time" value="$(arg sleep_time)" />
+    <param name="language" value="$(arg la)" />
   </node>
 </launch>

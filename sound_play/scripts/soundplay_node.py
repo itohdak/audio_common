@@ -47,6 +47,7 @@ import tempfile
 from diagnostic_msgs.msg import DiagnosticStatus, KeyValue, DiagnosticArray
 from sound_play.msg import SoundRequest, SoundRequestAction, SoundRequestResult, SoundRequestFeedback
 import actionlib
+import subprocess
 
 try:
     import pygst
@@ -230,12 +231,14 @@ class soundplay:
                 rospy.logdebug('command for uncached text: "%s"' % data.arg)
                 txtfile = tempfile.NamedTemporaryFile(prefix='sound_play', suffix='.txt')
                 (wavfile,wavfilename) = tempfile.mkstemp(prefix='sound_play', suffix='.wav')
+
                 txtfilename=txtfile.name
                 os.close(wavfile)
                 voice = data.arg2
                 try:
                     txtfile.write(data.arg)
                     txtfile.flush()
+                    print("text2wave -eval '("+voice+")' "+txtfilename+" -o "+wavfilename)
                     os.system("text2wave -eval '("+voice+")' "+txtfilename+" -o "+wavfilename)
                     try:
                         if os.stat(wavfilename).st_size == 0:
@@ -343,6 +346,7 @@ class soundplay:
             rospy.loginfo('Exception in diagnostics: %s'%str(e))
 
     def execute_cb(self, data):
+        print(data)
         data = data.sound_request
         if not self.initialized:
             return
@@ -382,6 +386,8 @@ class soundplay:
         except Exception, e:
             rospy.logerr('Exception in actionlib callback: %s'%str(e))
             rospy.loginfo(traceback.format_exc())
+            rospy.logerr('Failed to generate sound instance because Gstreamer opens too many files. Shutdown process for respawn.')
+            rospy.signal_shutdown('shutdown_for_respawn')
         finally:
             self.mutex.release()
             rospy.logdebug("done actionlib callback")

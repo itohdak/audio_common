@@ -8,7 +8,9 @@
     ()
   (setq *i* 0)
   (setq *sleep-time* (ros::get-param "~sleep_time" 1))
-  (setq *la* :jp)
+  (setq *la* (intern (string-upcase (ros::get-param "~language" "en")) *keyword-package*))
+  ;; (setq *la* :en)
+  ;; (setq *la* :jp)
   (do-until-key
    (incf *i*)
    (cond
