@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="sound_play" type="soundplay_node.py" name="robotsound"
+	output="screen">
+    <remap from="sound_play" to="robotsound" />
+  </node>
+</launch>
