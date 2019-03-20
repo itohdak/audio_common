@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find sound_play)/debug/debug_soundplay.launch" >
+    <arg name="sleep_time" value="0.01" />
+  </include>
+</launch>

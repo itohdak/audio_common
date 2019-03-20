@@ -1,0 +1,13 @@
+ <launch>
+  <arg name="device" default="" />
+  <arg name="sleep_time" default="1" />
+
+  <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"
+        output="screen" respawn="true" >
+    <param name="device" value="$(arg device)" />
+  </node>
+
+  <node name="eus_client" pkg="sound_play" type="soundplay-client.l" >
+    <param name="sleep_time" value="$(arg sleep_time)" />
+  </node>
+</launch>
