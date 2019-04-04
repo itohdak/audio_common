@@ -4,10 +4,16 @@
 
   <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"
         output="screen" respawn="true" >
+    <remap from="sound_play" to="robotsound" />
     <param name="device" value="$(arg device)" />
   </node>
 
-  <node name="eus_client" pkg="sound_play" type="soundplay-client.l" >
+  <include file="$(find voice_text)/launch/voice_text.launch" >
+    <arg name="launch_sound_play" value="true"/>
+  </include>
+
+  <node name="eus_client" pkg="sound_play" type="soundplay-client.l"
+        output="screen" >
     <param name="sleep_time" value="$(arg sleep_time)" />
   </node>
 </launch>
