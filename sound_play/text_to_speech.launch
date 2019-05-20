@@ -1,0 +1,33 @@
+<launch>
+  <arg name="launch_sound_play" default="true" />
+  <arg name="sound_play_respawn" default="true" />
+  <arg name="language" default="en-US" />
+  <arg name="use_google_cloud_for_english" default="false" />
+  <arg name="use_google_cloud_for_japanese" default="false" />
+
+  <group if="$(arg use_google_cloud_for_english)">
+    <node name="sound_play"
+          pkg="sound_play" type="soundplay_node.py"
+          respawn="$(arg sound_play_respawn)"
+          output="screen" >
+      <remap from="robotsound" to="robotsound"/>
+      <remap from="sound_play" to="robotsound"/>
+      <env name="PATH" value="$(find sound_play)/bin:$(env PATH)" />
+      <env name="PYTHONIOENCODING" value="utf-8" />
+      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="/etc/opt/jsk/robot/google-speech-recognition.json" />
+    </node>
+  </group>
+
+  <group if="$(arg use_google_cloud_for_japanese)">
+    <node name="sound_play_jp"
+          pkg="sound_play" type="soundplay_node.py"
+          respawn="$(arg sound_play_respawn)"
+          output="screen" >
+      <remap from="robotsound" to="robotsound_jp"/>
+      <remap from="sound_play" to="robotsound_jp"/>
+      <env name="PATH" value="$(find sound_play)/bin:$(env PATH)" />
+      <env name="PYTHONIOENCODING" value="utf-8" />
+      <env name="GOOGLE_APPLICATION_CREDENTIALS" value="/etc/opt/jsk/robot/google-speech-recognition.json" />
+    </node>
+  </group>
+</launch>
