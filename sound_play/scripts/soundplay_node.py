@@ -47,7 +47,6 @@ import tempfile
 from diagnostic_msgs.msg import DiagnosticStatus, KeyValue, DiagnosticArray
 from sound_play.msg import SoundRequest, SoundRequestAction, SoundRequestResult, SoundRequestFeedback
 import actionlib
-import subprocess
 
 try:
     import pygst
@@ -238,7 +237,7 @@ class soundplay:
                 try:
                     txtfile.write(data.arg)
                     txtfile.flush()
-                    print("text2wave -eval '("+voice+")' "+txtfilename+" -o "+wavfilename)
+                    # print("text2wave -eval '("+voice+")' "+txtfilename+" -o "+wavfilename)
                     os.system("text2wave -eval '("+voice+")' "+txtfilename+" -o "+wavfilename)
                     try:
                         if os.stat(wavfilename).st_size == 0:
@@ -346,7 +345,7 @@ class soundplay:
             rospy.loginfo('Exception in diagnostics: %s'%str(e))
 
     def execute_cb(self, data):
-        print(data)
+        # print(data)
         data = data.sound_request
         if not self.initialized:
             return
