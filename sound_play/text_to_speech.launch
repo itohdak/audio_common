@@ -4,6 +4,8 @@
   <arg name="language" default="en-US" />
   <arg name="use_google_cloud_for_english" default="false" />
   <arg name="use_google_cloud_for_japanese" default="false" />
+  <arg name="english_speed" default="100"/>
+  <arg name="japanese_speed" default="100"/>
 
   <group if="$(arg use_google_cloud_for_english)">
     <node name="sound_play"
@@ -15,6 +17,9 @@
       <env name="PATH" value="$(find sound_play)/bin:$(env PATH)" />
       <env name="PYTHONIOENCODING" value="utf-8" />
       <env name="GOOGLE_APPLICATION_CREDENTIALS" value="/etc/opt/jsk/robot/google-speech-recognition.json" />
+      <rosparam subst_value="true">
+        speaking_rate: $(arg english_speed)
+      </rosparam>
     </node>
   </group>
 
@@ -28,6 +33,9 @@
       <env name="PATH" value="$(find sound_play)/bin:$(env PATH)" />
       <env name="PYTHONIOENCODING" value="utf-8" />
       <env name="GOOGLE_APPLICATION_CREDENTIALS" value="/etc/opt/jsk/robot/google-speech-recognition.json" />
+      <rosparam subst_value="true">
+        speaking_rate: $(arg japanese_speed)
+      </rosparam>
     </node>
   </group>
 </launch>
