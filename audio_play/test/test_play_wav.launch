@@ -1,0 +1,9 @@
+<launch>
+  <arg name="rosbag_option" default="" />
+  <arg name="bagfile_names" default="$(find audio_play)/sample/wav.bag" />
+
+  <include file="$(find audio_play)/launch/play_wav.launch" />
+  <node name="rosbag_player" pkg="rosbag" type="play"
+        args="$(arg rosbag_option) $(arg bagfile_names)"/>
+</launch>
+

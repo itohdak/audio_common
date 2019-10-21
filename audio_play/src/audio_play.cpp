@@ -28,12 +28,24 @@ namespace audio_transport
         ros::param::param<std::string>("~input_format", _input_format, "mp3");
         ros::param::param<std::string>("~output_format", _output_format, "mp3");
 
+        // The bitrate at which to encode the audio
+        ros::param::param<int>("~bitrate", _bitrate, 192);
+
+        // only available for raw data
+        ros::param::param<int>("~channels", _channels, 1);
+        ros::param::param<int>("~depth", _depth, 16);
+        ros::param::param<int>("~sample_rate", _sample_rate, 16000);
+
         _sub = _nh.subscribe("audio", 10, &RosGstPlay::onAudio, this);
 
         _loop = g_main_loop_new(NULL, false);
 
         _pipeline = gst_pipeline_new("app_pipeline");
-        _source = gst_element_factory_make("appsrc", "app_source");
+        if (_input_format == "mp3") {
+          _source = gst_element_factory_make("appsrc", "app_source");
+        } else if (_input_format == "wave") {
+          _source = gst_element_factory_make("osssrc", "oss_source");
+        }
         g_object_set(G_OBJECT(_source), "do-timestamp", TRUE, NULL);
         gst_bin_add( GST_BIN(_pipeline), _source);
 
@@ -66,39 +78,50 @@ namespace audio_transport
           g_object_set( G_OBJECT(_sink), "location", dst_type.c_str(), NULL);
           /*---------------------------------------------------------------------*/
           if (_input_format == "wave") {
+            GstCaps *caps;
+            caps = gst_caps_new_simple("audio/x-raw",
+                                       "channels", G_TYPE_INT, _channels,
+                                       "width",    G_TYPE_INT, _depth,
+                                       "depth",    G_TYPE_INT, _depth,
+                                       "rate",     G_TYPE_INT, _sample_rate,
+                                       "signed",   G_TYPE_BOOLEAN, TRUE,
+                                       NULL);
+            g_object_set( G_OBJECT(_source), "caps", caps, NULL);
+            gst_caps_unref(caps);
 
+            // _filter = gst_element_factory_make("capsfilter", "filter");
+            // {
+            //   GstCaps *caps;
+            //   caps = gst_caps_new_simple("audio/x-raw",
+            //                              //      "channels", G_TYPE_INT, _channels,
+            //                              //      "depth",    G_TYPE_INT, _depth,
+            //                              "rate",     G_TYPE_INT, _sample_rate,
+            //                              //       "signed",   G_TYPE_BOOLEAN, TRUE,
+            //                              NULL);
+            //   g_object_set( G_OBJECT(_filter), "caps", caps, NULL);
+            //   gst_caps_unref(caps);
+            // }
 
-            // GstCaps *caps;
-            // caps = gst_caps_new_simple("audio/x-raw",
-            //                            "channels", G_TYPE_INT, _channels,
-            //                            "width",    G_TYPE_INT, _depth,
-            //                            "depth",    G_TYPE_INT, _depth,
-            //                            "rate",     G_TYPE_INT, _sample_rate,
-            //                            "signed",   G_TYPE_BOOLEAN, TRUE,
-            //                            NULL);
-
-            // g_object_set( G_OBJECT(_sink), "caps", caps, NULL);
-            // gst_caps_unref(caps);
-            // gst_bin_add_many( GST_BIN(_pipeline), _source, _sink, NULL);
-            // link_ok = gst_element_link_many( _source, _sink, NULL);
-
-            _decoder = gst_element_factory_make("decodebin", "decoder");
-            g_signal_connect(_decoder, "pad-added", G_CALLBACK(cb_newpad),this);
-            gst_bin_add( GST_BIN(_pipeline), _decoder);
-            gst_element_link(_source, _decoder);
-
-            // _audio = gst_bin_new("audiobin");
             // _convert = gst_element_factory_make("audioconvert", "convert");
-            // _encoder = gst_element_factory_make("wavenc", "encoder");
-            // audiopad = gst_element_get_static_pad(_convert, "sink");
+            // if (!_convert) {
+            //   ROS_ERROR_STREAM("Failed to create audioconvert element");
+            //   exit(1);
+            // }
 
-            // gst_bin_add_many( GST_BIN(_audio), _convert, _encoder, _sink, NULL);
-            // gst_element_link_many(_convert, _encoder, _sink, NULL);
-            // gst_element_add_pad(_audio, gst_ghost_pad_new("sink", audiopad));
-            // gst_object_unref(audiopad);
+
+            // _encoder = gst_element_factory_make("lamemp3enc", "encoder");
+            // if (!_encoder) {
+        	//   ROS_ERROR_STREAM("Failed to create encoder element");
+        	//   exit(1);
+            // }
+            // g_object_set( G_OBJECT(_encoder), "quality", 2.0, NULL);
+            // g_object_set( G_OBJECT(_encoder), "bitrate", _bitrate, NULL);
+
+            // gst_bin_add_many(GST_BIN(_pipeline), _filter, _convert, _encoder, _sink, NULL);
+            // gst_element_link_many(_source, _filter, _convert, _encoder, _sink, NULL);
 
             gst_bin_add(GST_BIN(_pipeline), _sink);
-            // gst_element_link(_source, _sink);
+            gst_element_link(_source, _sink);
           }
           /*---------------------------------------------------------------------*/
           else
@@ -163,9 +186,10 @@ namespace audio_transport
       ros::Subscriber _sub;
       boost::thread _gst_thread;
 
-      GstElement *_pipeline, *_source, *_sink, *_decoder, *_convert, *_audio, *_encoder;
+      GstElement *_pipeline, *_source, *_sink, *_decoder, *_convert, *_audio, *_encoder, *_filter;
       GstElement *_playbin;
       GMainLoop *_loop;
+      int _bitrate, _channels, _depth, _sample_rate;
   };
 }
 
