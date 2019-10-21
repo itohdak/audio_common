@@ -1,0 +1,12 @@
+<launch>
+  <arg name="dst" default="/tmp/tmp.mp3"/>
+  <arg name="output_format" default="wave"/>
+  <arg name="audio_topic" default="audio" />
+
+  <node name="audio_play" pkg="audio_play" type="audio_play" output="screen">
+    <param name="dst" value="$(arg dst)"/>
+    <param name="input_format" value="wave"/>
+    <param name="output_format" value="$(arg output_format)"/>
+    <remap from="audio" to="$(arg audio_topic)" />
+  </node>
+</launch>

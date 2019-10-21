@@ -77,12 +77,22 @@ namespace audio_transport
         _filter = gst_element_factory_make("capsfilter", "filter");
         {
           GstCaps *caps;
-          caps = gst_caps_new_simple("audio/x-raw",
-                        //      "channels", G_TYPE_INT, _channels,
-                        //      "depth",    G_TYPE_INT, _depth,
-                              "rate",     G_TYPE_INT, _sample_rate,
-                        //       "signed",   G_TYPE_BOOLEAN, TRUE,
-                              NULL);
+          if (_format == "mp3") {
+            caps = gst_caps_new_simple("audio/x-raw",
+                                       //      "channels", G_TYPE_INT, _channels,
+                                       //      "depth",    G_TYPE_INT, _depth,
+                                       "rate",     G_TYPE_INT, _sample_rate,
+                                       //       "signed",   G_TYPE_BOOLEAN, TRUE,
+                                       NULL);
+          } else {
+            caps = gst_caps_new_simple("audio/x-raw",
+                                       "channels", G_TYPE_INT, _channels,
+                                       "width",    G_TYPE_INT, _depth,
+                                       "depth",    G_TYPE_INT, _depth,
+                                       "rate",     G_TYPE_INT, _sample_rate,
+                                       "signed",   G_TYPE_BOOLEAN, TRUE,
+                                       NULL);
+          }
           g_object_set( G_OBJECT(_filter), "caps", caps, NULL);
           gst_caps_unref(caps);
         }
@@ -107,19 +117,18 @@ namespace audio_transport
           gst_bin_add_many( GST_BIN(_pipeline), _source, _filter, _convert, _encode, _sink, NULL);
           link_ok = gst_element_link_many(_source, _filter, _convert, _encode, _sink, NULL);
         } else if (_format == "wave") {
-          GstCaps *caps;
-          caps = gst_caps_new_simple("audio/x-raw",
-                                     "channels", G_TYPE_INT, _channels,
-                                     "width",    G_TYPE_INT, _depth,
-                                     "depth",    G_TYPE_INT, _depth,
-                                     "rate",     G_TYPE_INT, _sample_rate,
-                                     "signed",   G_TYPE_BOOLEAN, TRUE,
-                                     NULL);
-
-          g_object_set( G_OBJECT(_sink), "caps", caps, NULL);
-          gst_caps_unref(caps);
-          gst_bin_add_many( GST_BIN(_pipeline), _source, _sink, NULL);
-          link_ok = gst_element_link_many( _source, _sink, NULL);
+          if (dst_type == "appsink") {
+            gst_bin_add_many( GST_BIN(_pipeline), _source, _filter, _sink, NULL);
+            link_ok = gst_element_link_many( _source, _filter, _sink, NULL);
+          } else {
+            _encode = gst_element_factory_make("wavenc", "encoder");
+            if (!_encode) {
+        	  ROS_ERROR_STREAM("Failed to create encoder element");
+        	  exitOnMainThread(1);
+            }
+            gst_bin_add_many( GST_BIN(_pipeline), _source, _filter, _convert, _encode, _sink, NULL);
+            link_ok = gst_element_link_many(_source, _filter, _convert, _encode, _sink, NULL);
+          }
         } else {
           ROS_ERROR_STREAM("format must be \"wave\" or \"mp3\"");
           exitOnMainThread(1);
