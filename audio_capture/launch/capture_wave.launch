@@ -1,5 +1,6 @@
 <launch>
   <arg name="device" default="" />
+  <arg name="dst" default="/tmp/tmp.wav" />
 
   <!-- publish audio data as wav format -->
   <node name="audio_capture" pkg="audio_capture" type="audio_capture" output="screen">
@@ -9,5 +10,6 @@
     <param name="depth" value="16" />
     <param name="sample_rate" value="16000" />
     <param name="device" value="$(arg device)" />
+    <param name="dst" value="$(arg dst)" />
   </node>
 </launch>
