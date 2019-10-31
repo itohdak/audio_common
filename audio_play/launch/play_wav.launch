@@ -1,5 +1,5 @@
 <launch>
-  <arg name="dst" default="/tmp/tmp.wav"/>
+  <arg name="dst" default="/tmp/tmp.mp3"/>
 
   <node name="audio_play" pkg="audio_play" type="audio_play" output="screen">
     <param name="dst" value="$(arg dst)"/>
