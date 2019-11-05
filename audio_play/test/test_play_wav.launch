@@ -5,8 +5,8 @@
   <arg name="dst" default="/tmp/tmp.wav" />
 
   <include file="$(find audio_play)/launch/play_wav.launch">
-    <arg name="output_format" default="$(arg output_format)" />
-    <arg name="dst" default="$(arg dst)" />
+    <arg name="output_format" value="$(arg output_format)" />
+    <arg name="dst" value="$(arg dst)" />
   </include>
   <node name="rosbag_player" pkg="rosbag" type="play"
         args="$(arg rosbag_option) $(arg bagfile_names)"/>

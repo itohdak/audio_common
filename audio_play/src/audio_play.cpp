@@ -72,45 +72,79 @@ namespace audio_transport
         {
           _sink = gst_element_factory_make("filesink", "sink");
           g_object_set( G_OBJECT(_sink), "location", dst_type.c_str(), NULL);
-          /*---------------------------------------------------------------------*/
-          if (_input_format == "wave" && _output_format == "mp3") {
-            // parser
-            _filter = gst_element_factory_make("wavparse", "wav-parser");
-            // g_signal_connect(_filter, "pad-added", G_CALLBACK(cb_newpad), _sink);
-            g_signal_connect(_filter, "pad-added", G_CALLBACK(cb_newpad), this);
-            // gst_bin_add(GST_BIN(_pipeline), _filter);
-            // gst_element_link(_source, _filter);
+          /* ------------------------------------------------------------------------------------------- */
+          if (_input_format == "wave" && _output_format == "mp3")
+          {
+            // decoder
+            _decoder = gst_element_factory_make("wavparse", "wav-parser");
+            g_signal_connect(_decoder, "pad-added", G_CALLBACK(cb_newpad),this);
+            gst_bin_add( GST_BIN(_pipeline), _decoder);
+            if (gst_element_link(_source, _decoder) != TRUE)
+              {
+                std::cout << "Error occured in linking decoder \n";
+                exit(1);
+              }
 
+            _audio = gst_bin_new("audiobin");
             // converter
             _convert = gst_element_factory_make("audioconvert", "convert");
-            if (!_convert) {
-              ROS_ERROR_STREAM("Failed to create audioconvert element");
-              exit(1);
+            // encoder
+            _encoder = gst_element_factory_make("wavenc", "encoder");
+            audiopad = gst_element_get_static_pad(_convert, "sink");
+
+            gst_bin_add_many( GST_BIN(_audio), _convert, _encoder, _sink, NULL);
+            if (gst_element_link_many (_convert, _encoder, _sink, NULL) != TRUE)
+              {
+                std::cout << "Error occured in linking audio converter, encoder and sink \n";
+                exit(1);
+              }
+
+            gst_element_add_pad(_audio, gst_ghost_pad_new("sink", audiopad));
+            gst_object_unref(audiopad);
+
+            gst_bin_add(GST_BIN(_pipeline), _audio);
+          }
+          /* ------------------------------------------------------------------------------------------- */
+          else if (_input_format == "wave" && _output_format == "wave")
+          {
+            _audio = gst_bin_new("audiobin");
+            // converter
+            _convert = gst_element_factory_make("audioconvert", "convert");
+
+            _filter = gst_element_factory_make("capsfilter", "filter");
+            {
+              GstCaps *caps;
+              caps = gst_caps_new_simple("audio/x-raw",
+                                         //      "channels", G_TYPE_INT, _channels,
+                                         //      "depth",    G_TYPE_INT, _depth,
+                                         // "rate",     G_TYPE_INT, _sample_rate,
+                                         //       "signed",   G_TYPE_BOOLEAN, TRUE,
+                                         // "format", G_TYPE_STRING, "S24LE",
+                                         "rate", G_TYPE_INT, 48000,
+                                         NULL);
+              g_object_set( G_OBJECT(_filter), "caps", caps, NULL);
+              gst_caps_unref(caps);
             }
-            gst_bin_add(GST_BIN(_pipeline), _convert);
-            // gst_element_link(_filter, _convert);
-            std::cout << gst_element_link(_source, _convert) << std::endl;
 
             // encoder
-            if (_output_format == "wave") {
-              _encoder = gst_element_factory_make("wavenc", "encoder");
-            } else if (_output_format == "mp3") {
-              _encoder = gst_element_factory_make("lamemp3enc", "encoder");
-              g_object_set( G_OBJECT(_encoder), "quality", 2.0, NULL);
-              g_object_set( G_OBJECT(_encoder), "bitrate", _bitrate, NULL);
-            }
-            if (!_encoder) {
-        	  ROS_ERROR_STREAM("Failed to create encoder element");
-        	  exit(1);
-            }
-            gst_bin_add(GST_BIN(_pipeline), _encoder);
-            std::cout << gst_element_link(_convert, _encoder) << std::endl;
+            _encoder = gst_element_factory_make("wavenc", "encoder");
+            audiopad = gst_element_get_static_pad(_convert, "sink");
 
-            gst_bin_add(GST_BIN(_pipeline), _sink);
-            std::cout << gst_element_link(_encoder, _sink) << std::endl;
+            gst_bin_add_many( GST_BIN(_audio), _convert, _filter, _encoder, _sink, NULL);
+            if (gst_element_link_many (_convert, _filter, _encoder, _sink, NULL) != TRUE)
+              {
+                std::cout << "Error occured in linking audio converter, encoder and sink \n";
+                exit(1);
+              }
+
+            gst_element_add_pad(_audio, gst_ghost_pad_new("sink", audiopad));
+            gst_object_unref(audiopad);
+
+            gst_bin_add(GST_BIN(_pipeline), _audio);
           }
-          /*---------------------------------------------------------------------*/
-          else if (_input_format == "mp3" && _output_format == "wave") {
+          /* ------------------------------------------------------------------------------------------- */
+          else if (_input_format == "mp3" && _output_format == "wave")
+          {
             // decoder
             _decoder = gst_element_factory_make("decodebin", "decoder");
             g_signal_connect(_decoder, "pad-added", G_CALLBACK(cb_newpad),this);
@@ -140,11 +174,13 @@ namespace audio_transport
 
             gst_bin_add(GST_BIN(_pipeline), _audio);
           }
+          /* ------------------------------------------------------------------------------------------- */
           else if (_input_format == "mp3" && _output_format == "mp3")
           {
             gst_bin_add(GST_BIN(_pipeline), _sink);
             gst_element_link(_source, _sink);
           }
+          /* ------------------------------------------------------------------------------------------- */
           else
           {
             ROS_ERROR_STREAM("Unsupported media type.");
