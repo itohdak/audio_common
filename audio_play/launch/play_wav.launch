@@ -1,8 +1,10 @@
 <launch>
   <arg name="dst" default="/tmp/tmp.mp3"/>
+  <param name="output_format" value="wave"/>
 
   <node name="audio_play" pkg="audio_play" type="audio_play" output="screen">
     <param name="dst" value="$(arg dst)"/>
     <param name="input_format" value="wave"/>
+    <param name="output_format" value="$(arg output_format)"/>
   </node>
 </launch>
