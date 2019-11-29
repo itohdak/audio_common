@@ -111,7 +111,7 @@ class soundtype:
 
     def update(self):
         if self.bus is not None:
-            self.bus.poll(Gst.MessageType.ERROR, 10)
+            self.bus.poll(gst.MESSAGE_ERROR, 10)
 
     def loop(self):
         self.lock.acquire()
@@ -131,7 +131,7 @@ class soundtype:
         self.lock.acquire()
         try:
             if self.bus is not None:
-                self.sound.set_state(Gst.State.NULL)
+                self.sound.set_state(gst.STATE_NULL)
                 self.bus.disconnect(self.bus_conn_id)
                 self.bus.remove_signal_watch()
                 self.bus = None
